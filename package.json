@@ -3,6 +3,10 @@
     "ink": "^7.0.2",
     "react": "^19.2.6"
   },
+  "scripts": {
+    "start": "bun src/main.tsx",
+    "migrate": "bun src/migrate.ts"
+  },
   "devDependencies": {
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14"

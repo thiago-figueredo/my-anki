@@ -1,6 +1,6 @@
 import React from "react";
-import { CreateCard } from "./components/CreateCard";
+import { App } from "./App";
 
 import { render } from "ink";
 
-render(<CreateCard />);
+render(<App />);
