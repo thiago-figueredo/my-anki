@@ -31,7 +31,7 @@ export const EditDeckScreen = ({
         value={name}
         onChange={setName}
         onConfirmType={confirm}
-        cursorY={2}
+
         onCancel={onCancel}
       />
       <Text dimColor>Enter save Esc cancel</Text>

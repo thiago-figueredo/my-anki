@@ -54,25 +54,37 @@ export const CreateCardScreen = ({
     <Box flexDirection="column" marginTop={1}>
       <Text dimColor>{deck.name}</Text>
       <Box marginTop={1} flexDirection="column">
-        <TextInput
-          prompt={frontLabel}
-          value={card.front}
-          onChange={(text) => updateCard("front", text)}
-          onConfirmType={confirmFront}
-          isActive={activeField === "front"}
-          cursorY={3}
-          onCancel={onCancel}
-        />
+        {activeField === "front" ? (
+          <TextInput
+            prompt={frontLabel}
+            value={card.front}
+            onChange={(text) => updateCard("front", text)}
+            onConfirmType={confirmFront}
 
-        <TextInput
-          prompt={backLabel}
-          value={card.back}
-          onChange={(text) => updateCard("back", text)}
-          onConfirmType={confirmBack}
-          isActive={activeField === "back"}
-          cursorY={4}
-          onCancel={onCancel}
-        />
+            onCancel={onCancel}
+          />
+        ) : (
+          <Box>
+            <Text>  {frontLabel}</Text>
+            <Text>{card.front}</Text>
+          </Box>
+        )}
+
+        {activeField === "back" ? (
+          <TextInput
+            prompt={backLabel}
+            value={card.back}
+            onChange={(text) => updateCard("back", text)}
+            onConfirmType={confirmBack}
+
+            onCancel={onCancel}
+          />
+        ) : (
+          <Box>
+            <Text>  {backLabel}</Text>
+            <Text>{card.back}</Text>
+          </Box>
+        )}
       </Box>
 
       <Box marginTop={1}>

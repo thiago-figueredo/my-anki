@@ -28,7 +28,7 @@ export const CreateDeckScreen = ({
         value={name}
         onChange={setName}
         onConfirmType={confirmDeckName}
-        cursorY={2}
+
         onCancel={onCancel}
       />
       <Text dimColor>Enter save  Esc cancel</Text>

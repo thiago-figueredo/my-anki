@@ -1,6 +1,5 @@
 import React, { FC, useState, useEffect } from "react";
-import { Box, Text, useCursor, useInput } from "ink";
-import stringWidth from "string-width";
+import { Box, Text, useInput } from "ink";
 
 type TextInputProps = {
   prompt: string;
@@ -8,7 +7,6 @@ type TextInputProps = {
   onChange: (text: string) => void;
   onConfirmType: (text: string) => void | Promise<void>;
   isActive?: boolean;
-  cursorY?: number;
   onCancel?: () => void;
 };
 
@@ -18,10 +16,8 @@ export const TextInput: FC<TextInputProps> = ({
   onChange,
   onConfirmType,
   isActive = true,
-  cursorY = 0,
   onCancel,
 }) => {
-  const { setCursorPosition } = useCursor();
   const [cursor, setCursor] = useState(value.length);
 
   useEffect(() => {
@@ -82,29 +78,21 @@ export const TextInput: FC<TextInputProps> = ({
     { isActive },
   );
 
-  if (isActive) {
-    const before = value.slice(0, cursor);
-    setCursorPosition({
-      x: stringWidth(`> ${prompt}${before}`),
-      y: cursorY,
-    });
-  }
-
-  const before = value.slice(0, cursor);
-  const at = value[cursor] ?? " ";
-  const after = value.slice(cursor + 1);
-
   return (
     <Box>
       <Text color={isActive ? "cyan" : undefined}>
         {isActive ? "> " : "  "}
         {prompt}
       </Text>
-      <Text color={isActive ? "cyan" : undefined}>{before}</Text>
-      <Text color={isActive ? "cyan" : undefined} inverse={isActive}>
-        {at}
-      </Text>
-      <Text color={isActive ? "cyan" : undefined}>{after}</Text>
+      {isActive ? (
+        <>
+          <Text color="cyan">{value.slice(0, cursor)}</Text>
+          <Text color="cyan" inverse>{value[cursor] ?? " "}</Text>
+          <Text color="cyan">{value.slice(cursor + 1)}</Text>
+        </>
+      ) : (
+        <Text>{value}</Text>
+      )}
     </Box>
   );
 };

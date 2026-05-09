@@ -7,7 +7,7 @@ import { DeckListScreen } from "./screens/DeckListScreen";
 import { EditDeckScreen } from "./screens/EditDeckScreen";
 import { ReviewDeckScreen } from "./screens/ReviewDeckScreen";
 import { SearchCardsScreen } from "./screens/SearchCardsScreen";
-import { Card, Deck, Screen } from "./types";
+import { Card, Deck, Rating, Screen } from "./types";
 import { CardService } from "./services/CardService";
 import { DeckService } from "./services/DeckService";
 
@@ -75,6 +75,32 @@ export const App = () => {
     );
   };
 
+  const reviewCard = (card: Card, rating: Rating) => {
+    const updated = CardService.review(card, rating);
+    setDecks((previous) =>
+      previous.map((deck, index) =>
+        index === selectedDeckIndex
+          ? { ...deck, cards: deck.cards.map((c) => (c.id === updated.id ? updated : c)) }
+          : deck,
+      ),
+    );
+  };
+
+  const deleteDeck = () => {
+    DeckService.delete(selectedDeck.id);
+    setDecks((previous) => previous.filter((_, index) => index !== selectedDeckIndex));
+    setSelectedDeckIndex((i) => Math.max(0, i - 1));
+    setScreen(Screen.Decks);
+  };
+
+  const deleteDecks = (toDelete: Deck[]) => {
+    const ids = toDelete.map((d) => d.id);
+    DeckService.deleteMany(ids);
+    const idSet = new Set(ids);
+    setDecks((previous) => previous.filter((d) => !idSet.has(d.id)));
+    setSelectedDeckIndex(0);
+  };
+
   const deleteCards = (cards: Card[]) => {
     const ids = cards.map((c) => c.id);
     CardService.deleteMany(ids);
@@ -97,6 +123,7 @@ export const App = () => {
         onSelectDeck={setSelectedDeckIndex}
         onOpenDeck={() => setScreen(Screen.Deck)}
         onCreateDeck={() => setScreen(Screen.CreateDeck)}
+        onDeleteDecks={deleteDecks}
         onQuit={exit}
       />
     ),
@@ -112,6 +139,7 @@ export const App = () => {
         onCreateCard={() => setScreen(Screen.CreateCard)}
         onSearchCards={() => setScreen(Screen.SearchCards)}
         onEditDeck={() => setScreen(Screen.EditDeck)}
+        onDeleteDeck={deleteDeck}
         onReview={() => setScreen(Screen.Review)}
         onBack={() => setScreen(Screen.Decks)}
         onQuit={exit}
@@ -127,6 +155,7 @@ export const App = () => {
     review: () => (
       <ReviewDeckScreen
         deck={selectedDeck}
+        onReviewCard={reviewCard}
         onBack={() => setScreen(Screen.Deck)}
         onQuit={exit}
       />

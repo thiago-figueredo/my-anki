@@ -1,6 +1,8 @@
 import React from "react";
 import { Box, Text, useInput } from "ink";
 import { Deck } from "../types";
+import { formatDate } from "../lib/format";
+import { useMarkSelection, markPrefix } from "../lib/useMarkSelection";
 
 type DeckListScreenProps = {
   decks: Deck[];
@@ -8,6 +10,7 @@ type DeckListScreenProps = {
   onSelectDeck: (index: number) => void;
   onOpenDeck: () => void;
   onCreateDeck: () => void;
+  onDeleteDecks: (decks: Deck[]) => void;
   onQuit: () => void;
 };
 
@@ -17,8 +20,11 @@ export const DeckListScreen = ({
   onSelectDeck,
   onOpenDeck,
   onCreateDeck,
+  onDeleteDecks,
   onQuit,
 }: DeckListScreenProps) => {
+  const { marked, toggle, clear, getMarked } = useMarkSelection();
+
   useInput((input, key) => {
     if (input === "q" || key.escape) {
       onQuit();
@@ -44,6 +50,17 @@ export const DeckListScreen = ({
       return;
     }
 
+    if (key.tab) {
+      toggle(decks[selectedDeckIndex].id);
+      return;
+    }
+
+    if (key.ctrl && input === "d" && marked.size > 0) {
+      onDeleteDecks(getMarked(decks));
+      clear();
+      return;
+    }
+
     if (key.return) {
       onOpenDeck();
     }
@@ -56,14 +73,16 @@ export const DeckListScreen = ({
       ) : (
         decks.map((deck, index) => {
           const isSelected = index === selectedDeckIndex;
+          const isMarked = marked.has(deck.id);
+          const prefix = markPrefix(isMarked, isSelected);
           return (
             <Box key={deck.id} flexDirection="row" gap={1}>
-              <Text color={isSelected ? "cyan" : undefined}>
-                {isSelected ? "> " : "  "}
+              <Text color={isSelected ? "cyan" : isMarked ? "yellow" : undefined}>
+                {prefix}
                 {deck.name} ({deck.cards.length} cards)
               </Text>
               <Text dimColor>
-                created {deck.createdAt} | updated {deck.updatedAt}
+                created {formatDate(deck.createdAt)} | updated {formatDate(deck.updatedAt)}
               </Text>
             </Box>
           );
@@ -71,7 +90,9 @@ export const DeckListScreen = ({
       )}
 
       <Box marginTop={1}>
-        <Text dimColor>Enter open Up/Down select n new deck Esc/q quit</Text>
+        <Text dimColor>
+          Enter open Up/Down select Tab mark{marked.size > 0 ? " Ctrl+d delete marked" : ""} n new deck Esc/q quit
+        </Text>
       </Box>
     </Box>
   );

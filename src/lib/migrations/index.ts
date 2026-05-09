@@ -9,7 +9,7 @@ function readSql(name: string): string {
 }
 
 export function runMigrations() {
-  const migrations = ["001_create_decks", "002_create_cards"];
+  const migrations = ["001_create_decks", "002_create_cards", "003_add_srs_fields"];
 
   db.run(`CREATE TABLE IF NOT EXISTS _migrations (
     name TEXT PRIMARY KEY,

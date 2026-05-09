@@ -4,7 +4,18 @@ export type Card = {
   back: string;
   createdAt: string;
   updatedAt: string;
+  interval: number;
+  easeFactor: number;
+  repetitions: number;
+  nextReviewAt: string | null;
 };
+
+export enum Rating {
+  Again = 0,
+  Hard = 1,
+  Good = 2,
+  Easy = 3,
+}
 
 export type Deck = {
   id: number;

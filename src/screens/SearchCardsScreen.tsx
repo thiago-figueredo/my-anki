@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TextInput } from "../components/TextInput";
 import { Card, CardField, Deck } from "../types";
+import { formatDate } from "../lib/format";
+import { useMarkSelection, markPrefix } from "../lib/useMarkSelection";
 
 type SearchCardsScreenProps = {
   deck: Deck;
@@ -20,7 +22,7 @@ export const SearchCardsScreen = ({
 }: SearchCardsScreenProps) => {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [marked, setMarked] = useState<Set<number>>(new Set());
+  const { marked, toggle, clear, getMarked } = useMarkSelection();
   const [mode, setMode] = useState<Mode>("search");
   const [editCard, setEditCard] = useState<Card>({ id: 0, front: "", back: "" });
   const [activeField, setActiveField] = useState<CardField>("front");
@@ -54,22 +56,13 @@ export const SearchCardsScreen = ({
       }
 
       if (key.tab && selectedCard) {
-        setMarked((prev) => {
-          const next = new Set(prev);
-          if (next.has(selectedCard.id)) {
-            next.delete(selectedCard.id);
-          } else {
-            next.add(selectedCard.id);
-          }
-          return next;
-        });
+        toggle(selectedCard.id);
         return;
       }
 
       if (key.ctrl && input === "d" && marked.size > 0) {
-        const toDelete = filtered.filter((c) => marked.has(c.id));
-        onDeleteCards(toDelete);
-        setMarked(new Set());
+        onDeleteCards(getMarked(filtered));
+        clear();
         setSelectedIndex(0);
         return;
       }
@@ -134,24 +127,36 @@ export const SearchCardsScreen = ({
       <Box flexDirection="column" marginTop={1}>
         <Text dimColor>Editing card</Text>
         <Box marginTop={1} flexDirection="column">
-          <TextInput
-            prompt="Front: "
-            value={editCard.front}
-            onChange={(text) => updateEditCard("front", text)}
-            onConfirmType={() => setActiveField("back")}
-            isActive={activeField === "front"}
-            cursorY={3}
-            onCancel={() => setMode("selected")}
-          />
-          <TextInput
-            prompt="Back: "
-            value={editCard.back}
-            onChange={(text) => updateEditCard("back", text)}
-            onConfirmType={handleSave}
-            isActive={activeField === "back"}
-            cursorY={4}
-            onCancel={() => setMode("selected")}
-          />
+          {activeField === "front" ? (
+            <TextInput
+              prompt="Front: "
+              value={editCard.front}
+              onChange={(text) => updateEditCard("front", text)}
+              onConfirmType={() => setActiveField("back")}
+
+              onCancel={() => setMode("selected")}
+            />
+          ) : (
+            <Box>
+              <Text>  Front: </Text>
+              <Text>{editCard.front}</Text>
+            </Box>
+          )}
+          {activeField === "back" ? (
+            <TextInput
+              prompt="Back: "
+              value={editCard.back}
+              onChange={(text) => updateEditCard("back", text)}
+              onConfirmType={handleSave}
+
+              onCancel={() => setMode("selected")}
+            />
+          ) : (
+            <Box>
+              <Text>  Back: </Text>
+              <Text>{editCard.back}</Text>
+            </Box>
+          )}
         </Box>
         <Box marginTop={1}>
           <Text dimColor>Up/Down switch Enter save Esc cancel</Text>
@@ -192,7 +197,7 @@ export const SearchCardsScreen = ({
         onConfirmType={() => {
           if (selectedCard) setMode("selected");
         }}
-        cursorY={2}
+
         onCancel={onBack}
       />
 
@@ -203,7 +208,7 @@ export const SearchCardsScreen = ({
           filtered.map((card, index) => {
             const isSelected = index === selectedIndex;
             const isMarked = marked.has(card.id);
-            const prefix = `${isMarked ? "x" : " "} ${isSelected ? "> " : "  "}`;
+            const prefix = markPrefix(isMarked, isSelected);
             return (
               <Box key={card.id} flexDirection="row" gap={1}>
                 <Text
@@ -213,7 +218,7 @@ export const SearchCardsScreen = ({
                   {card.front} / {card.back}
                 </Text>
                 <Text dimColor>
-                  created {card.createdAt} | updated {card.updatedAt}
+                  created {formatDate(card.createdAt)} | updated {formatDate(card.updatedAt)}
                 </Text>
               </Box>
             );
