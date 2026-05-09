@@ -21,7 +21,10 @@ export class DeckService {
   static list(): Deck[] {
     const rows = db
       .query(
-        `SELECT d.id, d.name, d.created_at, d.updated_at, c.id AS card_id, c.front, c.back, c.created_at AS card_created_at, c.updated_at AS card_updated_at, c.interval, c.ease_factor, c.repetitions, c.next_review_at
+        `SELECT 
+            d.id, d.name, d.created_at, d.updated_at,
+            c.id AS card_id, c.front, c.back, c.created_at AS card_created_at, c.updated_at AS card_updated_at,
+            c.interval, c.ease_factor, c.repetitions, c.next_review_at
          FROM decks d
          LEFT JOIN cards c ON c.deck_id = d.id
          ORDER BY d.id, c.id`,
@@ -34,7 +37,13 @@ export class DeckService {
       let deck = decksMap.get(row.id);
 
       if (!deck) {
-        deck = { id: row.id, name: row.name, cards: [], createdAt: row.created_at, updatedAt: row.updated_at };
+        deck = {
+          id: row.id,
+          name: row.name,
+          cards: [],
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
         decksMap.set(row.id, deck);
       }
 
@@ -58,10 +67,22 @@ export class DeckService {
 
   static create({ name }: Pick<Deck, "name">): Deck {
     const result = db
-      .query(`INSERT INTO decks (name) VALUES ($name) RETURNING id, created_at, updated_at`)
-      .get({ $name: name }) as { id: number; created_at: string; updated_at: string };
+      .query(
+        `INSERT INTO decks (name) VALUES ($name) RETURNING id, created_at, updated_at`,
+      )
+      .get({ $name: name }) as {
+      id: number;
+      created_at: string;
+      updated_at: string;
+    };
 
-    return { id: result.id, name, cards: [], createdAt: result.created_at, updatedAt: result.updated_at };
+    return {
+      id: result.id,
+      name,
+      cards: [],
+      createdAt: result.created_at,
+      updatedAt: result.updated_at,
+    };
   }
 
   static update(id: number, name: string): void {
@@ -77,7 +98,9 @@ export class DeckService {
 
   static deleteMany(ids: number[]): void {
     const placeholders = ids.map(() => "?").join(", ");
-    db.query(`DELETE FROM cards WHERE deck_id IN (${placeholders})`).run(...ids);
+    db.query(`DELETE FROM cards WHERE deck_id IN (${placeholders})`).run(
+      ...ids,
+    );
     db.query(`DELETE FROM decks WHERE id IN (${placeholders})`).run(...ids);
   }
 }

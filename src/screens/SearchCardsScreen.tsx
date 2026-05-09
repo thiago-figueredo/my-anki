@@ -1,18 +1,23 @@
 import React, { useMemo, useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Newline, Text, useInput } from "ink";
 import { TextInput } from "../components/TextInput";
+import Markdown from "../components/Markdown";
 import { Card, CardField, Deck } from "../types";
 import { formatDate } from "../lib/format";
 import { useMarkSelection, markPrefix } from "../lib/useMarkSelection";
 
 type SearchCardsScreenProps = {
   deck: Deck;
-  onUpdateCard: (card: Card) => void;
+  onUpdateCard: (card: Pick<Card, "id" | "front" | "back">) => void;
   onDeleteCards: (cards: Card[]) => void;
   onBack: () => void;
 };
 
 type Mode = "search" | "selected" | "edit";
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max) + "…" : text;
+}
 
 export const SearchCardsScreen = ({
   deck,
@@ -24,18 +29,29 @@ export const SearchCardsScreen = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { marked, toggle, clear, getMarked } = useMarkSelection();
   const [mode, setMode] = useState<Mode>("search");
-  const [editCard, setEditCard] = useState<Card>({ id: 0, front: "", back: "" });
+  const [editCard, setEditCard] = useState<Pick<Card, "id" | "front" | "back">>(
+    {
+      id: 0,
+      front: "",
+      back: "",
+    },
+  );
+
   const [activeField, setActiveField] = useState<CardField>("front");
 
   const filtered = useMemo(() => {
     if (!query.trim()) return deck.cards;
     const q = query.toLowerCase();
-    return deck.cards.filter(
-      (c) =>
-        c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q),
-    );
+    return deck.cards.filter((c) => {
+      return (
+        c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q)
+      );
+    });
   }, [query, deck.cards]);
 
+  const PAGE_SIZE = 10;
+  const MAX_CHARS_CARD = 125;
+  const [scrollOffset, setScrollOffset] = useState(0);
   const selectedCard = filtered[selectedIndex];
 
   useInput(
@@ -45,13 +61,22 @@ export const SearchCardsScreen = ({
         return;
       }
 
-      if (key.upArrow) {
-        setSelectedIndex((i) => Math.max(0, i - 1));
+      if (key.upArrow || (key.ctrl && input === "p")) {
+        setSelectedIndex((i) => {
+          const next = Math.max(0, i - 1);
+          if (next < scrollOffset) setScrollOffset(next);
+          return next;
+        });
         return;
       }
 
-      if (key.downArrow) {
-        setSelectedIndex((i) => Math.min(filtered.length - 1, i + 1));
+      if (key.downArrow || (key.ctrl && input === "n")) {
+        setSelectedIndex((i) => {
+          const next = Math.min(filtered.length - 1, i + 1);
+          if (next >= scrollOffset + PAGE_SIZE)
+            setScrollOffset(next - PAGE_SIZE + 1);
+          return next;
+        });
         return;
       }
 
@@ -133,12 +158,11 @@ export const SearchCardsScreen = ({
               value={editCard.front}
               onChange={(text) => updateEditCard("front", text)}
               onConfirmType={() => setActiveField("back")}
-
               onCancel={() => setMode("selected")}
             />
           ) : (
             <Box>
-              <Text>  Front: </Text>
+              <Text> Front: </Text>
               <Text>{editCard.front}</Text>
             </Box>
           )}
@@ -148,12 +172,11 @@ export const SearchCardsScreen = ({
               value={editCard.back}
               onChange={(text) => updateEditCard("back", text)}
               onConfirmType={handleSave}
-
               onCancel={() => setMode("selected")}
             />
           ) : (
             <Box>
-              <Text>  Back: </Text>
+              <Text> Back: </Text>
               <Text>{editCard.back}</Text>
             </Box>
           )}
@@ -170,11 +193,11 @@ export const SearchCardsScreen = ({
       <Box flexDirection="column" marginTop={1}>
         <Box flexDirection="column">
           <Text bold>Front: </Text>
-          <Text>{selectedCard.front}</Text>
+          <Markdown>{selectedCard.front}</Markdown>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text bold>Back: </Text>
-          <Text>{selectedCard.back}</Text>
+          <Markdown>{selectedCard.back}</Markdown>
         </Box>
         <Box marginTop={1} flexDirection="column">
           <Text>e edit</Text>
@@ -193,11 +216,11 @@ export const SearchCardsScreen = ({
         onChange={(text) => {
           setQuery(text);
           setSelectedIndex(0);
+          setScrollOffset(0);
         }}
         onConfirmType={() => {
           if (selectedCard) setMode("selected");
         }}
-
         onCancel={onBack}
       />
 
@@ -205,30 +228,52 @@ export const SearchCardsScreen = ({
         {filtered.length === 0 ? (
           <Text dimColor>No cards found.</Text>
         ) : (
-          filtered.map((card, index) => {
-            const isSelected = index === selectedIndex;
-            const isMarked = marked.has(card.id);
-            const prefix = markPrefix(isMarked, isSelected);
-            return (
-              <Box key={card.id} flexDirection="row" gap={1}>
-                <Text
-                  color={isSelected ? "cyan" : isMarked ? "yellow" : undefined}
-                >
-                  {prefix}
-                  {card.front} / {card.back}
-                </Text>
-                <Text dimColor>
-                  created {formatDate(card.createdAt)} | updated {formatDate(card.updatedAt)}
-                </Text>
-              </Box>
-            );
-          })
+          <>
+            {scrollOffset > 0 && <Text dimColor> ↑ {scrollOffset} more</Text>}
+            {filtered
+              .slice(scrollOffset, scrollOffset + PAGE_SIZE)
+              .map((card, i) => {
+                const index = scrollOffset + i;
+                const isSelected = index === selectedIndex;
+                const isMarked = marked.has(card.id);
+                const prefix = markPrefix(isMarked, isSelected);
+
+                return (
+                  <Box key={card.id} flexDirection="row" gap={1}>
+                    <Box>
+                      <Text
+                        color={
+                          isSelected ? "cyan" : isMarked ? "yellow" : undefined
+                        }
+                      >
+                        {prefix}
+                      </Text>
+                      <Markdown>
+                        {truncate(card.front, MAX_CHARS_CARD)}
+                      </Markdown>
+                      <Text dimColor>
+                        {" "}
+                        created {formatDate(card.createdAt)} | updated{" "}
+                        {formatDate(card.updatedAt)}
+                      </Text>
+                    </Box>
+                  </Box>
+                );
+              })}
+            {scrollOffset + PAGE_SIZE < filtered.length && (
+              <Text dimColor>
+                {" "}
+                ↓ {filtered.length - scrollOffset - PAGE_SIZE} more
+              </Text>
+            )}
+          </>
         )}
       </Box>
 
       <Box marginTop={1}>
         <Text dimColor>
-          Up/Down select Tab mark Enter open{marked.size > 0 ? " Ctrl+d delete marked" : ""} Esc back
+          Up/Down select Tab mark Enter open
+          {marked.size > 0 ? " Ctrl+d delete marked" : ""} Esc back
         </Text>
       </Box>
     </Box>

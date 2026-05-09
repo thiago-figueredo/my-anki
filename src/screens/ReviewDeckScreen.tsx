@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Newline, Text, useInput } from "ink";
 import { Card, Deck, Rating } from "../types";
+import Markdown from "../components/Markdown";
+import dedent from "dedent";
 
 type ReviewDeckScreenProps = {
   deck: Deck;
@@ -9,7 +11,12 @@ type ReviewDeckScreenProps = {
   onQuit: () => void;
 };
 
-const ratingLabels: { key: string; rating: Rating; label: string; color: string }[] = [
+const ratingLabels: {
+  key: string;
+  rating: Rating;
+  label: string;
+  color: string;
+}[] = [
   { key: "1", rating: Rating.Again, label: "Again", color: "red" },
   { key: "2", rating: Rating.Hard, label: "Hard", color: "yellow" },
   { key: "3", rating: Rating.Good, label: "Good", color: "green" },
@@ -88,14 +95,16 @@ export const ReviewDeckScreen = ({
     }
 
     const match = ratingLabels.find((r) => r.key === input);
-    if (match) {
-      onReviewCard(currentCard, match.rating);
-      if (reviewIndex + 1 >= dueCards.length) {
-        onBack();
-      } else {
-        setReviewIndex((i) => i + 1);
-        setIsAnswerVisible(false);
-      }
+
+    if (!match) return;
+
+    onReviewCard(currentCard, match.rating);
+
+    if (reviewIndex + 1 >= dueCards.length) {
+      onBack();
+    } else {
+      setReviewIndex((i) => i + 1);
+      setIsAnswerVisible(false);
     }
   });
 
@@ -118,22 +127,20 @@ export const ReviewDeckScreen = ({
         {deck.name} — {reviewIndex + 1}/{dueCards.length} due
       </Text>
 
-      <Box marginTop={1} flexDirection="column">
-        <Text bold>Front</Text>
-        <Text>{currentCard.front}</Text>
-      </Box>
+      <Markdown>{dedent`# Front\n${currentCard.front}`}</Markdown>
 
-      <Box marginTop={1} flexDirection="column">
-        <Text bold>Back</Text>
-        <Text>{isAnswerVisible ? currentCard.back : "..."}</Text>
-      </Box>
+      <Newline />
+
+      <Markdown>{dedent`# Back\n${isAnswerVisible ? currentCard.back : "..."}`}</Markdown>
 
       <Box marginTop={1}>
         {isAnswerVisible ? (
           <Box gap={2}>
             {ratingLabels.map((r, i) => (
               <Text key={r.key}>
-                <Text color={r.color} bold>{r.key}</Text>
+                <Text color={r.color} bold>
+                  {r.key}
+                </Text>
                 <Text color={r.color}> {r.label}</Text>
                 <Text dimColor> ({intervals[i]})</Text>
               </Text>

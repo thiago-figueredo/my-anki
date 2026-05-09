@@ -75,14 +75,22 @@ export const DeckListScreen = ({
           const isSelected = index === selectedDeckIndex;
           const isMarked = marked.has(deck.id);
           const prefix = markPrefix(isMarked, isSelected);
+          const nextReviewDate = deck.cards.at(0)?.nextReviewAt;
+
           return (
             <Box key={deck.id} flexDirection="row" gap={1}>
-              <Text color={isSelected ? "cyan" : isMarked ? "yellow" : undefined}>
+              <Text
+                color={isSelected ? "cyan" : isMarked ? "yellow" : undefined}
+              >
                 {prefix}
                 {deck.name} ({deck.cards.length} cards)
               </Text>
               <Text dimColor>
-                created {formatDate(deck.createdAt)} | updated {formatDate(deck.updatedAt)}
+                created {formatDate(deck.createdAt)} | updated{" "}
+                {formatDate(deck.updatedAt)}
+                {nextReviewDate && (
+                  <>| next review {formatDate(nextReviewDate)}</>
+                )}
               </Text>
             </Box>
           );
@@ -91,7 +99,8 @@ export const DeckListScreen = ({
 
       <Box marginTop={1}>
         <Text dimColor>
-          Enter open Up/Down select Tab mark{marked.size > 0 ? " Ctrl+d delete marked" : ""} n new deck Esc/q quit
+          Enter open Up/Down select Tab mark
+          {marked.size > 0 ? " Ctrl+d delete marked" : ""} n new deck Esc/q quit
         </Text>
       </Box>
     </Box>

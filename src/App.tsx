@@ -6,6 +6,7 @@ import { DeckDetailScreen } from "./screens/DeckDetailScreen";
 import { DeckListScreen } from "./screens/DeckListScreen";
 import { EditDeckScreen } from "./screens/EditDeckScreen";
 import { ReviewDeckScreen } from "./screens/ReviewDeckScreen";
+import { ImportCardsScreen } from "./screens/ImportCardsScreen";
 import { SearchCardsScreen } from "./screens/SearchCardsScreen";
 import { Card, Deck, Rating, Screen } from "./types";
 import { CardService } from "./services/CardService";
@@ -19,6 +20,14 @@ export const App = () => {
 
   const selectedDeck = decks[selectedDeckIndex];
 
+  const updateSelectedDeck = (updater: (deck: Deck) => Deck) => {
+    setDecks((previous) =>
+      previous.map((deck, index) =>
+        index === selectedDeckIndex ? updater(deck) : deck,
+      ),
+    );
+  };
+
   const title = useMemo(() => {
     const map = {
       [Screen.CreateDeck]: "Create Deck",
@@ -27,6 +36,7 @@ export const App = () => {
       [Screen.Deck]: selectedDeck?.name ?? "Deck",
       [Screen.SearchCards]: "Search Cards",
       [Screen.EditDeck]: "Edit Deck",
+      [Screen.ImportCards]: "Import Cards",
       [Screen.Decks]: "Decks",
     };
 
@@ -42,53 +52,42 @@ export const App = () => {
 
   const updateDeck = (name: string) => {
     DeckService.update(selectedDeck.id, name);
-    setDecks((previous) =>
-      previous.map((deck, index) =>
-        index === selectedDeckIndex ? { ...deck, name, updatedAt: new Date().toISOString() } : deck,
-      ),
-    );
+    updateSelectedDeck((deck) => ({ ...deck, name, updatedAt: new Date().toISOString() }));
+    setScreen(Screen.Deck);
+  };
+
+  const importCards = (cards: Pick<Card, "front" | "back">[]) => {
+    const created = CardService.createMany(selectedDeck.id, cards);
+    updateSelectedDeck((deck) => ({ ...deck, cards: [...deck.cards, ...created] }));
     setScreen(Screen.Deck);
   };
 
   const createCard = (data: Pick<Card, "front" | "back">) => {
     const card = CardService.create(selectedDeck.id, data);
-    setDecks((previous) => {
-      return previous.map((deck, index) => {
-        return index === selectedDeckIndex
-          ? { ...deck, cards: [...deck.cards, card] }
-          : deck;
-      });
-    });
+    updateSelectedDeck((deck) => ({ ...deck, cards: [...deck.cards, card] }));
   };
 
-  const updateCard = (card: Card) => {
+  const updateCard = (card: Pick<Card, "id" | "front" | "back">) => {
     CardService.update(card.id, { front: card.front, back: card.back });
-    setDecks((previous) =>
-      previous.map((deck, index) =>
-        index === selectedDeckIndex
-          ? {
-              ...deck,
-              cards: deck.cards.map((c) => (c.id === card.id ? card : c)),
-            }
-          : deck,
-      ),
-    );
+    updateSelectedDeck((deck) => ({
+      ...deck,
+      cards: deck.cards.map((c) => (c.id === card.id ? (card as Card) : c)),
+    }));
   };
 
   const reviewCard = (card: Card, rating: Rating) => {
     const updated = CardService.review(card, rating);
-    setDecks((previous) =>
-      previous.map((deck, index) =>
-        index === selectedDeckIndex
-          ? { ...deck, cards: deck.cards.map((c) => (c.id === updated.id ? updated : c)) }
-          : deck,
-      ),
-    );
+    updateSelectedDeck((deck) => ({
+      ...deck,
+      cards: deck.cards.map((c) => (c.id === updated.id ? updated : c)),
+    }));
   };
 
   const deleteDeck = () => {
     DeckService.delete(selectedDeck.id);
-    setDecks((previous) => previous.filter((_, index) => index !== selectedDeckIndex));
+    setDecks((previous) =>
+      previous.filter((_, index) => index !== selectedDeckIndex),
+    );
     setSelectedDeckIndex((i) => Math.max(0, i - 1));
     setScreen(Screen.Decks);
   };
@@ -105,14 +104,10 @@ export const App = () => {
     const ids = cards.map((c) => c.id);
     CardService.deleteMany(ids);
     const idSet = new Set(ids);
-
-    setDecks((previous) =>
-      previous.map((deck, index) =>
-        index === selectedDeckIndex
-          ? { ...deck, cards: deck.cards.filter((c) => !idSet.has(c.id)) }
-          : deck,
-      ),
-    );
+    updateSelectedDeck((deck) => ({
+      ...deck,
+      cards: deck.cards.filter((c) => !idSet.has(c.id)),
+    }));
   };
 
   const screens = {
@@ -137,6 +132,7 @@ export const App = () => {
       <DeckDetailScreen
         deck={selectedDeck}
         onCreateCard={() => setScreen(Screen.CreateCard)}
+        onImportCards={() => setScreen(Screen.ImportCards)}
         onSearchCards={() => setScreen(Screen.SearchCards)}
         onEditDeck={() => setScreen(Screen.EditDeck)}
         onDeleteDeck={deleteDeck}
@@ -164,6 +160,13 @@ export const App = () => {
       <EditDeckScreen
         deck={selectedDeck}
         onSave={updateDeck}
+        onCancel={() => setScreen(Screen.Deck)}
+      />
+    ),
+    importCards: () => (
+      <ImportCardsScreen
+        deck={selectedDeck}
+        onImportCards={importCards}
         onCancel={() => setScreen(Screen.Deck)}
       />
     ),

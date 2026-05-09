@@ -33,5 +33,6 @@ export enum Screen {
   Review = "review",
   SearchCards = "searchCards",
   EditDeck = "editDeck",
+  ImportCards = "importCards",
 }
 export type CardField = "front" | "back";

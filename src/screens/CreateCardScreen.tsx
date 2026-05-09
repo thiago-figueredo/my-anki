@@ -16,6 +16,7 @@ export const CreateCardScreen = ({
 }: CreateCardScreenProps) => {
   const [card, setCard] = useState({ front: "", back: "" });
   const [activeField, setActiveField] = useState<CardField>("front");
+  const [error, setError] = useState<string | null>(null);
   const frontLabel = "Front: ";
   const backLabel = "Back: ";
 
@@ -32,6 +33,7 @@ export const CreateCardScreen = ({
 
   const updateCard = (field: CardField, text: string) => {
     setCard((previous) => ({ ...previous, [field]: text }));
+    setError(null);
   };
 
   const confirmFront = () => {
@@ -45,7 +47,14 @@ export const CreateCardScreen = ({
       return;
     }
 
-    onCreateCard(card);
+    try {
+      onCreateCard(card);
+    } catch (err: any) {
+      setError(err.message);
+      return;
+    }
+
+    setError(null);
     setCard({ front: "", back: "" });
     setActiveField("front");
   };
@@ -87,6 +96,7 @@ export const CreateCardScreen = ({
         )}
       </Box>
 
+      {error && <Text color="red">{error}</Text>}
       <Box marginTop={1}>
         <Text dimColor>Up/Down switch Enter next/save Esc decks</Text>
       </Box>

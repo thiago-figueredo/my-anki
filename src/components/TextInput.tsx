@@ -8,6 +8,7 @@ type TextInputProps = {
   onConfirmType: (text: string) => void | Promise<void>;
   isActive?: boolean;
   onCancel?: () => void;
+  onTab?: () => string | void;
 };
 
 export const TextInput: FC<TextInputProps> = ({
@@ -17,6 +18,7 @@ export const TextInput: FC<TextInputProps> = ({
   onConfirmType,
   isActive = true,
   onCancel,
+  onTab,
 }) => {
   const [cursor, setCursor] = useState(value.length);
 
@@ -33,6 +35,15 @@ export const TextInput: FC<TextInputProps> = ({
 
       if (key.return) {
         await onConfirmType(value);
+        return;
+      }
+
+      if (key.tab && onTab) {
+        const completed = onTab();
+        if (typeof completed === "string") {
+          onChange(completed);
+          setCursor(completed.length);
+        }
         return;
       }
 

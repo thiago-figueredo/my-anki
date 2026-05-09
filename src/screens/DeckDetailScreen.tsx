@@ -6,6 +6,7 @@ import { formatDate } from "../lib/format";
 type DeckDetailScreenProps = {
   deck: Deck;
   onCreateCard: () => void;
+  onImportCards: () => void;
   onSearchCards: () => void;
   onEditDeck: () => void;
   onDeleteDeck: () => void;
@@ -17,6 +18,7 @@ type DeckDetailScreenProps = {
 export const DeckDetailScreen = ({
   deck,
   onCreateCard,
+  onImportCards,
   onSearchCards,
   onEditDeck,
   onDeleteDeck,
@@ -39,6 +41,7 @@ export const DeckDetailScreen = ({
   const keyMap = {
     q: onQuit,
     a: onCreateCard,
+    i: onImportCards,
     e: onEditDeck,
     s: () => hasCards && onSearchCards(),
     r: () => dueCount > 0 && onReview(),
@@ -67,6 +70,7 @@ export const DeckDetailScreen = ({
       {nextReviewAt && <Text dimColor>next review {formatDate(nextReviewAt)}</Text>}
       <Box marginTop={1} flexDirection="column">
         <Text>a add card</Text>
+        <Text>i import cards</Text>
         <Text>e edit deck</Text>
         <Text color={hasCards ? undefined : "gray"}>s search cards</Text>
         <Text color={dueCount > 0 ? undefined : "gray"}>
