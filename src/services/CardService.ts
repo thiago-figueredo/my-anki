@@ -1,5 +1,6 @@
 import { Card, Rating } from "../types";
 import { db } from "../lib/db";
+import { EvaluationResult } from "./AiTutorService";
 
 export class DuplicateCardError extends Error {
   constructor(public field: "front" | "back", public value: string) {
@@ -99,7 +100,11 @@ export class CardService {
     db.query(`DELETE FROM cards WHERE id IN (${placeholders})`).run(...ids);
   }
 
-  static review(card: Card, rating: Rating): Card {
+  static review(
+    card: Card,
+    rating: Rating,
+    aiData?: { response: string; evaluation: EvaluationResult },
+  ): Card {
     let { interval, easeFactor, repetitions } = card;
 
     if (rating === Rating.Again) {
@@ -132,15 +137,47 @@ export class CardService {
     nextReview.setDate(nextReview.getDate() + interval);
     const nextReviewAt = nextReview.toISOString();
 
-    db.query(
-      `UPDATE cards SET interval = $interval, ease_factor = $easeFactor, repetitions = $repetitions, next_review_at = $nextReviewAt, updated_at = CURRENT_TIMESTAMP WHERE id = $id`,
-    ).run({
-      $id: card.id,
-      $interval: interval,
-      $easeFactor: easeFactor,
-      $repetitions: repetitions,
-      $nextReviewAt: nextReviewAt,
+    const saveReview = db.transaction(() => {
+      db.query(
+        `UPDATE cards SET interval = $interval, ease_factor = $easeFactor, repetitions = $repetitions, next_review_at = $nextReviewAt, updated_at = CURRENT_TIMESTAMP WHERE id = $id`,
+      ).run({
+        $id: card.id,
+        $interval: interval,
+        $easeFactor: easeFactor,
+        $repetitions: repetitions,
+        $nextReviewAt: nextReviewAt,
+      });
+
+      db.query(
+        `INSERT INTO reviews (
+          card_id, rating, interval, ease_factor, repetitions, 
+          user_response, ai_score, ai_is_correct, ai_feedback_summary, ai_metadata
+        ) VALUES (
+          $cardId, $rating, $interval, $easeFactor, $repetitions,
+          $userResponse, $aiScore, $aiIsCorrect, $aiFeedbackSummary, $aiMetadata
+        )`,
+      ).run({
+        $cardId: card.id,
+        $rating: rating,
+        $interval: interval,
+        $easeFactor: easeFactor,
+        $repetitions: repetitions,
+        $userResponse: aiData?.response ?? null,
+        $aiScore: aiData?.evaluation.score.value ?? null,
+        $aiIsCorrect: aiData ? (aiData.evaluation.correctness === "correct") : null,
+        $aiFeedbackSummary: aiData?.evaluation.feedback.summary ?? null,
+        $aiMetadata: aiData
+          ? JSON.stringify({
+              issues: aiData.evaluation.feedback.issues,
+              correctPoints: aiData.evaluation.feedback.what_was_correct,
+              missingPoints: aiData.evaluation.feedback.missing_key_points,
+              improvementTips: aiData.evaluation.feedback.suggested_improvement,
+            })
+          : null,
+      });
     });
+
+    saveReview();
 
     return { ...card, interval, easeFactor, repetitions, nextReviewAt };
   }

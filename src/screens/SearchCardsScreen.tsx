@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Box, Newline, Text, useInput } from "ink";
+import { Box, Text, useInput } from "ink";
 import { TextInput } from "../components/TextInput";
 import Markdown from "../components/Markdown";
 import { Card, CardField, Deck } from "../types";
@@ -29,13 +29,11 @@ export const SearchCardsScreen = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { marked, toggle, clear, getMarked } = useMarkSelection();
   const [mode, setMode] = useState<Mode>("search");
-  const [editCard, setEditCard] = useState<Pick<Card, "id" | "front" | "back">>(
-    {
-      id: 0,
-      front: "",
-      back: "",
-    },
-  );
+  const [editCard, setEditCard] = useState<Pick<Card, "id" | "front" | "back">>({
+    id: 0,
+    front: "",
+    back: "",
+  });
 
   const [activeField, setActiveField] = useState<CardField>("front");
 
@@ -181,8 +179,10 @@ export const SearchCardsScreen = ({
             </Box>
           )}
         </Box>
-        <Box marginTop={1}>
-          <Text dimColor>Up/Down switch Enter save Esc cancel</Text>
+        <Box marginTop={1} flexDirection="column">
+          <Text dimColor>Up/Down switch</Text>
+          <Text dimColor>Enter save</Text>
+          <Text dimColor>Esc cancel</Text>
         </Box>
       </Box>
     );
@@ -200,9 +200,9 @@ export const SearchCardsScreen = ({
           <Markdown>{selectedCard.back}</Markdown>
         </Box>
         <Box marginTop={1} flexDirection="column">
-          <Text>e edit</Text>
-          <Text>d delete</Text>
-          <Text>Esc back</Text>
+          <Text dimColor>e edit</Text>
+          <Text dimColor>d delete</Text>
+          <Text dimColor>Esc back</Text>
         </Box>
       </Box>
     );
@@ -270,11 +270,12 @@ export const SearchCardsScreen = ({
         )}
       </Box>
 
-      <Box marginTop={1}>
-        <Text dimColor>
-          Up/Down select Tab mark Enter open
-          {marked.size > 0 ? " Ctrl+d delete marked" : ""} Esc back
-        </Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>Up/Down select</Text>
+        <Text dimColor>Tab mark</Text>
+        <Text dimColor>Enter open</Text>
+        {marked.size > 0 && <Text dimColor>Ctrl+d delete marked</Text>}
+        <Text dimColor>Esc back</Text>
       </Box>
     </Box>
   );

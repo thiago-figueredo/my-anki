@@ -34,7 +34,10 @@ export const EditDeckScreen = ({
 
         onCancel={onCancel}
       />
-      <Text dimColor>Enter save Esc cancel</Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>Enter save</Text>
+        <Text dimColor>Esc cancel</Text>
+      </Box>
     </Box>
   );
 };

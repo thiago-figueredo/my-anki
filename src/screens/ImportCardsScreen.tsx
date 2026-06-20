@@ -71,7 +71,8 @@ function completeFilePath(input: string): string {
     if (common.length > prefix.length) {
       return join(parentDir, common);
     }
-  } catch {}
+    // eslint-disable-next-line no-empty
+  } catch { }
 
   return input;
 }
@@ -132,13 +133,13 @@ export const ImportCardsScreen = ({
     try {
       const content = readFileSync(resolve(trimmed), "utf-8");
       onImportCards(parseCards(content));
-    } catch (err: any) {
-      if (err.code === "ENOENT") {
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err && err.code === "ENOENT") {
         setError("File not found");
       } else if (err instanceof SyntaxError) {
         setError("Invalid JSON");
       } else {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
       }
     }
   };
@@ -149,11 +150,11 @@ export const ImportCardsScreen = ({
 
     try {
       onImportCards(parseCards(trimmed));
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof SyntaxError) {
         setError("Invalid JSON");
       } else {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
       }
     }
   };
@@ -173,7 +174,12 @@ export const ImportCardsScreen = ({
           })}
         </Box>
         <Box marginTop={1}>
-          <Text dimColor>Enter select  Up/Down navigate  Esc cancel</Text>
+          <Text dimColor>JSON format: [&#123;"front": "...", "back": "..."&#125;]</Text>
+        </Box>
+        <Box marginTop={1} flexDirection="column">
+          <Text dimColor>Enter select</Text>
+          <Text dimColor>Up/Down navigate</Text>
+          <Text dimColor>Esc cancel</Text>
         </Box>
       </Box>
     );
@@ -193,7 +199,14 @@ export const ImportCardsScreen = ({
         onTab={isFile ? () => completeFilePath(value) : undefined}
       />
       {error && <Text color="red">{error}</Text>}
-      <Text dimColor>{isFile ? "Tab autocomplete  " : ""}Enter import  Esc back</Text>
+      <Box marginTop={1}>
+        <Text dimColor>JSON format: [&#123;"front": "...", "back": "..."&#125;]</Text>
+      </Box>
+      <Box marginTop={1} flexDirection="column">
+        {isFile && <Text dimColor>Tab autocomplete</Text>}
+        <Text dimColor>Enter import</Text>
+        <Text dimColor>Esc back</Text>
+      </Box>
     </Box>
   );
 };

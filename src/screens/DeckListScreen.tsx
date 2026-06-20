@@ -97,11 +97,13 @@ export const DeckListScreen = ({
         })
       )}
 
-      <Box marginTop={1}>
-        <Text dimColor>
-          Enter open Up/Down select Tab mark
-          {marked.size > 0 ? " Ctrl+d delete marked" : ""} n new deck Esc/q quit
-        </Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>Enter open</Text>
+        <Text dimColor>Up/Down select</Text>
+        <Text dimColor>Tab mark</Text>
+        <Text dimColor>n new deck</Text>
+        {marked.size > 0 && <Text dimColor>Ctrl+d delete marked</Text>}
+        <Text dimColor>Esc/q quit</Text>
       </Box>
     </Box>
   );

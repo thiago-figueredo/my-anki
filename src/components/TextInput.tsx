@@ -1,5 +1,8 @@
-import React, { FC, useState, useEffect } from "react";
-import { Box, Text, useInput } from "ink";
+import React, { FC } from "react";
+import { Box, Text } from "ink";
+import Markdown, { getMarkdownAnsi } from "./Markdown";
+import { useTextInput } from "../lib/useTextInput";
+import chalk from "chalk";
 
 type TextInputProps = {
   prompt: string;
@@ -11,99 +14,48 @@ type TextInputProps = {
   onTab?: () => string | void;
 };
 
-export const TextInput: FC<TextInputProps> = ({
-  prompt,
-  value,
-  onChange,
-  onConfirmType,
-  isActive = true,
-  onCancel,
-  onTab,
-}) => {
-  const [cursor, setCursor] = useState(value.length);
+export const TextInput: FC<TextInputProps> = (props) => {
+  const { value, prompt, isActive = true } = props;
+  const { cursor } = useTextInput(props);
 
-  useEffect(() => {
-    setCursor(value.length);
-  }, [isActive]);
+  const renderValue = () => {
+    if (!isActive) {
+      return <Markdown>{value}</Markdown>;
+    }
 
-  useInput(
-    async (input, key) => {
-      if (key.escape) {
-        onCancel?.();
-        return;
-      }
+    // Use a placeholder to render the string with markdown styles preserved
+    // even if the cursor is in the middle of a styled block.
+    const charAtCursor = value[cursor];
+    const displayChar =
+      charAtCursor === undefined || charAtCursor === "\n" ? " " : charAtCursor;
 
-      if (key.return) {
-        await onConfirmType(value);
-        return;
-      }
+    // We use a special character that markdown won't escape
+    const placeholder = "\uF000";
+    const textWithPlaceholder =
+      value.slice(0, cursor) + placeholder + value.slice(cursor + 1);
 
-      if (key.tab && onTab) {
-        const completed = onTab();
-        if (typeof completed === "string") {
-          onChange(completed);
-          setCursor(completed.length);
-        }
-        return;
-      }
+    const ansi = getMarkdownAnsi(textWithPlaceholder);
 
-      if (key.ctrl && input === "a") {
-        setCursor(0);
-        return;
-      }
+    // Replace placeholder with the inversed cursor character.
+    // We use chalk directly for the inverse effect to keep it ANSI-compatible.
+    const cursorAnsi = chalk.inverse(displayChar);
 
-      if (key.ctrl && input === "e") {
-        setCursor(value.length);
-        return;
-      }
+    // If we're at a newline, we need to ensure the newline itself is rendered
+    // after the cursor block if we replaced a \n.
+    const suffix = charAtCursor === "\n" ? "\n" : "";
 
-      if (key.leftArrow) {
-        setCursor((c) => Math.max(0, c - 1));
-        return;
-      }
-
-      if (key.rightArrow) {
-        setCursor((c) => Math.min(value.length, c + 1));
-        return;
-      }
-
-      if ((key.backspace || key.delete) && key.meta) {
-        onChange(value.slice(cursor));
-        setCursor(0);
-        return;
-      }
-
-      if (key.backspace || key.delete) {
-        if (cursor > 0) {
-          onChange(value.slice(0, cursor - 1) + value.slice(cursor));
-          setCursor((c) => c - 1);
-        }
-        return;
-      }
-
-      if (!key.ctrl && !key.meta && input) {
-        onChange(value.slice(0, cursor) + input + value.slice(cursor));
-        setCursor((c) => c + input.length);
-      }
-    },
-    { isActive },
-  );
+    return <Text>{ansi.replace(placeholder, cursorAnsi) + suffix}</Text>;
+  };
 
   return (
-    <Box>
+    <Box flexDirection="row">
       <Text color={isActive ? "cyan" : undefined}>
         {isActive ? "> " : "  "}
         {prompt}
       </Text>
-      {isActive ? (
-        <>
-          <Text color="cyan">{value.slice(0, cursor)}</Text>
-          <Text color="cyan" inverse>{value[cursor] ?? " "}</Text>
-          <Text color="cyan">{value.slice(cursor + 1)}</Text>
-        </>
-      ) : (
-        <Text>{value}</Text>
-      )}
+      <Box>
+        {renderValue()}
+      </Box>
     </Box>
   );
 };

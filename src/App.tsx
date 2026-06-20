@@ -11,6 +11,7 @@ import { SearchCardsScreen } from "./screens/SearchCardsScreen";
 import { Card, Deck, Rating, Screen } from "./types";
 import { CardService } from "./services/CardService";
 import { DeckService } from "./services/DeckService";
+import { EvaluationResult } from "./services/AiTutorService";
 
 export const App = () => {
   const { exit } = useApp();
@@ -75,8 +76,12 @@ export const App = () => {
     }));
   };
 
-  const reviewCard = (card: Card, rating: Rating) => {
-    const updated = CardService.review(card, rating);
+  const reviewCard = (
+    card: Card,
+    rating: Rating,
+    aiData?: { response: string; evaluation: EvaluationResult },
+  ) => {
+    const updated = CardService.review(card, rating, aiData);
     updateSelectedDeck((deck) => ({
       ...deck,
       cards: deck.cards.map((c) => (c.id === updated.id ? updated : c)),

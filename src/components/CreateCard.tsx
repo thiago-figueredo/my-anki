@@ -45,7 +45,6 @@ export const CreateCard = () => {
         onChange={onChangeCardFront}
         onConfirmType={onConfirmCardFront}
         isActive={activeField === "front"}
-        cursorY={0}
       />
 
       <TextInput
@@ -54,7 +53,6 @@ export const CreateCard = () => {
         onChange={onChangeCardBack}
         onConfirmType={onConfirmCardBack}
         isActive={activeField === "back"}
-        cursorY={1}
       />
     </Box>
   );

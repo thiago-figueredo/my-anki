@@ -38,7 +38,7 @@ export const DeckDetailScreen = ({
       .map((c) => c.nextReviewAt!)
       .sort()[0] ?? null;
 
-  const keyMap = {
+  const keyMap: Record<string, (key: import("ink").Key) => void> = {
     q: onQuit,
     a: onCreateCard,
     i: onImportCards,

@@ -49,8 +49,8 @@ export const CreateCardScreen = ({
 
     try {
       onCreateCard(card);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
       return;
     }
 
@@ -97,8 +97,10 @@ export const CreateCardScreen = ({
       </Box>
 
       {error && <Text color="red">{error}</Text>}
-      <Box marginTop={1}>
-        <Text dimColor>Up/Down switch Enter next/save Esc decks</Text>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor>Up/Down switch</Text>
+        <Text dimColor>Enter next/save</Text>
+        <Text dimColor>Esc decks</Text>
       </Box>
     </Box>
   );

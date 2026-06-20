@@ -9,7 +9,12 @@ function readSql(name: string): string {
 }
 
 export function runMigrations() {
-  const migrations = ["001_create_decks", "002_create_cards", "003_add_srs_fields"];
+  const migrations = [
+    "001_create_decks",
+    "002_create_cards",
+    "003_add_srs_fields",
+    "004_create_reviews",
+  ];
 
   db.run(`CREATE TABLE IF NOT EXISTS _migrations (
     name TEXT PRIMARY KEY,
@@ -23,7 +28,7 @@ export function runMigrations() {
 
     if (!row) {
       db.run(readSql(name));
-      db.run(`INSERT INTO _migrations (name) VALUES ($name)`, { $name: name });
+      db.run(`INSERT INTO _migrations (name) VALUES ($name)`, { $name: name } as never);
     }
   }
 }
